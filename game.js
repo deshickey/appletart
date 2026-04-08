@@ -42,7 +42,11 @@ class BootScene extends Phaser.Scene {
     btn.on('pointerout', () => btn.setColor('#e8c89a'));
     btn.on('pointerdown', () => this.scene.start('Game'));
 
-    this.add.text(cx, cy + 120, '\u2190 \u2192 move   \u2022   Space / \u2191 jump   \u2022   Collect tart slices', {
+    const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const controlsHint = isMobile
+      ? 'Touch controls on screen   \u2022   Collect tart slices'
+      : '\u2190 \u2192 move   \u2022   Space / \u2191 jump   \u2022   Collect tart slices';
+    this.add.text(cx, cy + 120, controlsHint, {
       fontFamily: 'Courier Prime, monospace',
       fontSize: '12px',
       color: '#4a3a2a',
@@ -456,6 +460,15 @@ class GameScene extends Phaser.Scene {
       right: Phaser.Input.Keyboard.KeyCodes.D,
     });
 
+    // ── Touch controls ──
+    this.touchLeft = false;
+    this.touchRight = false;
+    this.touchJump = false;
+
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+      this.createTouchControls(W, H);
+    }
+
     // ── Audio ──
     this.audioEl = document.createElement('audio');
     this.audioEl.src = 'Apple Tart PERC.mp3';
@@ -476,6 +489,49 @@ class GameScene extends Phaser.Scene {
 
     // ── Invincibility state ──
     this.invincibleUntil = 0;
+  }
+
+  // ── Touch controls (mobile) ──
+  createTouchControls(W, H) {
+    const btnSize = 56;
+    const pad = 20;
+    const y = H - pad - btnSize / 2;
+    const alpha = 0.35;
+    const depth = 200;
+
+    // Left arrow
+    const leftBtn = this.add.circle(pad + btnSize / 2, y, btnSize / 2, 0xffffff, alpha)
+      .setScrollFactor(0).setDepth(depth).setInteractive();
+    this.add.text(pad + btnSize / 2, y, '\u25C0', {
+      fontSize: '24px', color: '#fff',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(depth + 1);
+
+    // Right arrow
+    const rightBtn = this.add.circle(pad + btnSize * 1.6, y, btnSize / 2, 0xffffff, alpha)
+      .setScrollFactor(0).setDepth(depth).setInteractive();
+    this.add.text(pad + btnSize * 1.6, y, '\u25B6', {
+      fontSize: '24px', color: '#fff',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(depth + 1);
+
+    // Jump button
+    const jumpBtn = this.add.circle(W - pad - btnSize / 2, y, btnSize / 2, 0xffffff, alpha)
+      .setScrollFactor(0).setDepth(depth).setInteractive();
+    this.add.text(W - pad - btnSize / 2, y, '\u25B2', {
+      fontSize: '24px', color: '#fff',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(depth + 1);
+
+    // Touch handlers — use pointerdown/pointerup for multi-touch
+    leftBtn.on('pointerdown', () => { this.touchLeft = true; });
+    leftBtn.on('pointerup', () => { this.touchLeft = false; });
+    leftBtn.on('pointerout', () => { this.touchLeft = false; });
+
+    rightBtn.on('pointerdown', () => { this.touchRight = true; });
+    rightBtn.on('pointerup', () => { this.touchRight = false; });
+    rightBtn.on('pointerout', () => { this.touchRight = false; });
+
+    jumpBtn.on('pointerdown', () => { this.touchJump = true; });
+    jumpBtn.on('pointerup', () => { this.touchJump = false; });
+    jumpBtn.on('pointerout', () => { this.touchJump = false; });
   }
 
   // ── Build parallax background objects ──
@@ -675,18 +731,19 @@ class GameScene extends Phaser.Scene {
     const speed = this.currentSection === 'comatose' ? 180 : 260;
     const jumpForce = this.currentSection === 'comatose' ? -280 : -400;
 
-    if (this.cursors.left.isDown || this.wasd.left.isDown) {
+    if (this.cursors.left.isDown || this.wasd.left.isDown || this.touchLeft) {
       this.player.body.setVelocityX(-speed);
       this.player.setFlipX(true);
-    } else if (this.cursors.right.isDown || this.wasd.right.isDown) {
+    } else if (this.cursors.right.isDown || this.wasd.right.isDown || this.touchRight) {
       this.player.body.setVelocityX(speed);
       this.player.setFlipX(false);
     } else {
       this.player.body.setVelocityX(this.player.body.velocity.x * 0.85);
     }
 
-    if ((this.cursors.up.isDown || this.cursors.space.isDown || this.wasd.up.isDown) && onGround) {
+    if ((this.cursors.up.isDown || this.cursors.space.isDown || this.wasd.up.isDown || this.touchJump) && onGround) {
       this.player.body.setVelocityY(jumpForce);
+      this.touchJump = false; // consume jump so it doesn't repeat
     }
 
     // Animations
@@ -1095,6 +1152,9 @@ const config = {
   height: window.innerHeight,
   parent: document.body,
   backgroundColor: '#0a0705',
+  input: {
+    activePointers: 3,
+  },
   physics: {
     default: 'arcade',
     arcade: {
