@@ -493,45 +493,68 @@ class GameScene extends Phaser.Scene {
 
   // ── Touch controls (mobile) ──
   createTouchControls(W, H) {
-    const btnSize = 56;
-    const pad = 20;
-    const y = H - pad - btnSize / 2;
-    const alpha = 0.35;
+    this.isMobile = true;
     const depth = 200;
+    const btnR = 34;
+    const pad = 24;
+    const bottomY = H - pad - btnR;
 
-    // Left arrow
-    const leftBtn = this.add.circle(pad + btnSize / 2, y, btnSize / 2, 0xffffff, alpha)
-      .setScrollFactor(0).setDepth(depth).setInteractive();
-    this.add.text(pad + btnSize / 2, y, '\u25C0', {
-      fontSize: '24px', color: '#fff',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(depth + 1);
+    // Visual indicators (non-interactive decorations)
+    // Left button
+    this.touchBtnLeft = this.add.circle(pad + btnR, bottomY, btnR, 0xffffff, 0.2)
+      .setScrollFactor(0).setDepth(depth).setStrokeStyle(2, 0xffffff, 0.4);
+    this.add.text(pad + btnR, bottomY, '\u25C0', {
+      fontSize: '22px', color: '#fff',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(depth + 1).setAlpha(0.6);
 
-    // Right arrow
-    const rightBtn = this.add.circle(pad + btnSize * 1.6, y, btnSize / 2, 0xffffff, alpha)
-      .setScrollFactor(0).setDepth(depth).setInteractive();
-    this.add.text(pad + btnSize * 1.6, y, '\u25B6', {
-      fontSize: '24px', color: '#fff',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(depth + 1);
+    // Right button
+    this.touchBtnRight = this.add.circle(pad + btnR * 3.2, bottomY, btnR, 0xffffff, 0.2)
+      .setScrollFactor(0).setDepth(depth).setStrokeStyle(2, 0xffffff, 0.4);
+    this.add.text(pad + btnR * 3.2, bottomY, '\u25B6', {
+      fontSize: '22px', color: '#fff',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(depth + 1).setAlpha(0.6);
 
     // Jump button
-    const jumpBtn = this.add.circle(W - pad - btnSize / 2, y, btnSize / 2, 0xffffff, alpha)
-      .setScrollFactor(0).setDepth(depth).setInteractive();
-    this.add.text(W - pad - btnSize / 2, y, '\u25B2', {
-      fontSize: '24px', color: '#fff',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(depth + 1);
+    this.touchBtnJump = this.add.circle(W - pad - btnR, bottomY, btnR, 0xffffff, 0.2)
+      .setScrollFactor(0).setDepth(depth).setStrokeStyle(2, 0xffffff, 0.4);
+    this.add.text(W - pad - btnR, bottomY, '\u25B2', {
+      fontSize: '22px', color: '#fff',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(depth + 1).setAlpha(0.6);
+  }
 
-    // Touch handlers — use pointerdown/pointerup for multi-touch
-    leftBtn.on('pointerdown', () => { this.touchLeft = true; });
-    leftBtn.on('pointerup', () => { this.touchLeft = false; });
-    leftBtn.on('pointerout', () => { this.touchLeft = false; });
+  // ── Read touch zones each frame (zone-based, not hit-test) ──
+  updateTouchInput() {
+    if (!this.isMobile) return;
+    this.touchLeft = false;
+    this.touchRight = false;
+    // touchJump is set on press and consumed on use, so don't reset here
 
-    rightBtn.on('pointerdown', () => { this.touchRight = true; });
-    rightBtn.on('pointerup', () => { this.touchRight = false; });
-    rightBtn.on('pointerout', () => { this.touchRight = false; });
+    const W = this.scale.width;
+    const pointers = [this.input.pointer1, this.input.pointer2, this.input.pointer3];
+    let jumpPressed = false;
 
-    jumpBtn.on('pointerdown', () => { this.touchJump = true; });
-    jumpBtn.on('pointerup', () => { this.touchJump = false; });
-    jumpBtn.on('pointerout', () => { this.touchJump = false; });
+    for (const p of pointers) {
+      if (!p || !p.isDown) continue;
+      const px = p.x;
+      const py = p.y;
+      // Only consider touches in the bottom 40% of the screen
+      if (py < this.scale.height * 0.6) continue;
+
+      if (px < W * 0.25) {
+        this.touchLeft = true;
+      } else if (px < W * 0.5) {
+        this.touchRight = true;
+      } else if (px > W * 0.65) {
+        jumpPressed = true;
+      }
+    }
+
+    if (jumpPressed) this.touchJump = true;
+
+    // Visual feedback
+    if (this.touchBtnLeft) this.touchBtnLeft.setAlpha(this.touchLeft ? 0.6 : 0.2);
+    if (this.touchBtnRight) this.touchBtnRight.setAlpha(this.touchRight ? 0.6 : 0.2);
+    if (this.touchBtnJump) this.touchBtnJump.setAlpha(this.touchJump ? 0.6 : 0.2);
   }
 
   // ── Build parallax background objects ──
@@ -725,6 +748,9 @@ class GameScene extends Phaser.Scene {
     const tm = Math.floor(this.songDuration / 60);
     const ts = Math.floor(this.songDuration % 60).toString().padStart(2, '0');
     this.timerText.setText(`${m}:${s} / ${tm}:${ts}`);
+
+    // ── Touch input (zone-based, polled each frame) ──
+    this.updateTouchInput();
 
     // ── Player movement ──
     const onGround = this.player.body.blocked.down || this.player.body.touching.down;
@@ -1154,6 +1180,7 @@ const config = {
   backgroundColor: '#0a0705',
   input: {
     activePointers: 3,
+    touch: { capture: true },
   },
   physics: {
     default: 'arcade',
