@@ -1241,4 +1241,14 @@ const config = {
   },
 };
 
-new Phaser.Game(config);
+const game = new Phaser.Game(config);
+
+// Force resize on orientation change (mobile Safari doesn't always fire resize)
+function forceResize() {
+  setTimeout(() => {
+    game.scale.resize(window.innerWidth, window.innerHeight);
+    game.scale.refresh();
+  }, 150);
+}
+window.addEventListener('orientationchange', forceResize);
+screen.orientation?.addEventListener('change', forceResize);
