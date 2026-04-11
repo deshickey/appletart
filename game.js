@@ -491,70 +491,115 @@ class GameScene extends Phaser.Scene {
     this.invincibleUntil = 0;
   }
 
-  // ── Touch controls (mobile) ──
+  // ── Touch controls (mobile) — virtual joystick + jump button ──
   createTouchControls(W, H) {
     this.isMobile = true;
     const depth = 200;
-    const btnR = 34;
-    const pad = 24;
-    const bottomY = H - pad - btnR;
 
-    // Visual indicators (non-interactive decorations)
-    // Left button
-    this.touchBtnLeft = this.add.circle(pad + btnR, bottomY, btnR, 0xffffff, 0.2)
-      .setScrollFactor(0).setDepth(depth).setStrokeStyle(2, 0xffffff, 0.4);
-    this.add.text(pad + btnR, bottomY, '\u25C0', {
-      fontSize: '22px', color: '#fff',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(depth + 1).setAlpha(0.6);
+    // Joystick config
+    this.joyBaseR = 50;
+    this.joyKnobR = 22;
+    this.joyMaxDist = 40;
+    const joyX = 80;
+    const joyY = H - 80;
 
-    // Right button
-    this.touchBtnRight = this.add.circle(pad + btnR * 3.2, bottomY, btnR, 0xffffff, 0.2)
-      .setScrollFactor(0).setDepth(depth).setStrokeStyle(2, 0xffffff, 0.4);
-    this.add.text(pad + btnR * 3.2, bottomY, '\u25B6', {
-      fontSize: '22px', color: '#fff',
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(depth + 1).setAlpha(0.6);
+    // Joystick base (outer ring)
+    this.joyBase = this.add.circle(joyX, joyY, this.joyBaseR, 0xffffff, 0.1)
+      .setScrollFactor(0).setDepth(depth).setStrokeStyle(2, 0xffffff, 0.3);
+    // Joystick knob (inner)
+    this.joyKnob = this.add.circle(joyX, joyY, this.joyKnobR, 0xffffff, 0.3)
+      .setScrollFactor(0).setDepth(depth + 1).setStrokeStyle(2, 0xffffff, 0.5);
+
+    this.joyOrigin = { x: joyX, y: joyY };
+    this.joyPointerId = null;
 
     // Jump button
-    this.touchBtnJump = this.add.circle(W - pad - btnR, bottomY, btnR, 0xffffff, 0.2)
-      .setScrollFactor(0).setDepth(depth).setStrokeStyle(2, 0xffffff, 0.4);
-    this.add.text(W - pad - btnR, bottomY, '\u25B2', {
-      fontSize: '22px', color: '#fff',
+    const jumpX = W - 70;
+    const jumpY = H - 80;
+    const jumpR = 36;
+    this.jumpBtnCenter = { x: jumpX, y: jumpY };
+    this.jumpBtnR = jumpR;
+    this.jumpBtn = this.add.circle(jumpX, jumpY, jumpR, 0xffffff, 0.15)
+      .setScrollFactor(0).setDepth(depth).setStrokeStyle(2, 0xffffff, 0.3);
+    this.add.text(jumpX, jumpY, 'JUMP', {
+      fontFamily: 'Courier Prime, monospace', fontSize: '12px', color: '#fff',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(depth + 1).setAlpha(0.6);
+    this.jumpPointerId = null;
   }
 
-  // ── Read touch zones each frame (zone-based, not hit-test) ──
+  // ── Poll touch input each frame ──
   updateTouchInput() {
     if (!this.isMobile) return;
+
     this.touchLeft = false;
     this.touchRight = false;
-    // touchJump is set on press and consumed on use, so don't reset here
 
-    const W = this.scale.width;
     const pointers = [this.input.pointer1, this.input.pointer2, this.input.pointer3];
-    let jumpPressed = false;
+
+    // Check if joystick/jump pointers are still down
+    let joyPointerActive = false;
+    let jumpPointerActive = false;
 
     for (const p of pointers) {
-      if (!p || !p.isDown) continue;
-      const px = p.x;
-      const py = p.y;
-      // Only consider touches in the bottom 40% of the screen
-      if (py < this.scale.height * 0.6) continue;
+      if (!p) continue;
 
-      if (px < W * 0.25) {
-        this.touchLeft = true;
-      } else if (px < W * 0.5) {
-        this.touchRight = true;
-      } else if (px > W * 0.65) {
-        jumpPressed = true;
+      if (p.isDown) {
+        const px = p.x;
+        const py = p.y;
+
+        // Assign pointer to joystick if touching left half and not already assigned
+        if (this.joyPointerId === null && px < this.scale.width * 0.5 && this.jumpPointerId !== p.id) {
+          this.joyPointerId = p.id;
+        }
+
+        // Assign pointer to jump if touching right side near button
+        if (this.jumpPointerId === null && px > this.scale.width * 0.5 && this.joyPointerId !== p.id) {
+          this.jumpPointerId = p.id;
+        }
+
+        // Process joystick
+        if (p.id === this.joyPointerId) {
+          joyPointerActive = true;
+          const dx = px - this.joyOrigin.x;
+          const dy = py - this.joyOrigin.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const clampDist = Math.min(dist, this.joyMaxDist);
+          const angle = Math.atan2(dy, dx);
+
+          // Move knob visually
+          this.joyKnob.setPosition(
+            this.joyOrigin.x + Math.cos(angle) * clampDist,
+            this.joyOrigin.y + Math.sin(angle) * clampDist
+          );
+
+          // Determine direction from horizontal component (deadzone 30%)
+          const normX = dist > 0 ? dx / dist : 0;
+          if (clampDist > this.joyMaxDist * 0.3) {
+            if (normX < -0.3) this.touchLeft = true;
+            else if (normX > 0.3) this.touchRight = true;
+          }
+        }
+
+        // Process jump
+        if (p.id === this.jumpPointerId) {
+          jumpPointerActive = true;
+          this.touchJump = true;
+          this.jumpBtn.setAlpha(0.4);
+        }
       }
     }
 
-    if (jumpPressed) this.touchJump = true;
+    // Release joystick
+    if (!joyPointerActive && this.joyPointerId !== null) {
+      this.joyPointerId = null;
+      this.joyKnob.setPosition(this.joyOrigin.x, this.joyOrigin.y);
+    }
 
-    // Visual feedback
-    if (this.touchBtnLeft) this.touchBtnLeft.setAlpha(this.touchLeft ? 0.6 : 0.2);
-    if (this.touchBtnRight) this.touchBtnRight.setAlpha(this.touchRight ? 0.6 : 0.2);
-    if (this.touchBtnJump) this.touchBtnJump.setAlpha(this.touchJump ? 0.6 : 0.2);
+    // Release jump
+    if (!jumpPointerActive && this.jumpPointerId !== null) {
+      this.jumpPointerId = null;
+      this.jumpBtn.setAlpha(0.15);
+    }
   }
 
   // ── Build parallax background objects ──
