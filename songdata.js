@@ -20,7 +20,7 @@ export const lyrics = [
   { t: 94,  text: "You needed a man more manly than I" },
   { t: 100, text: "So you quickly disposed of the softer weak guy" },
   { t: 106, text: "What did you need to know" },
-  { t: 113, text: "Why did you ever really need to know" },
+  { t: 113, text: "Why did you ever need to 🙀 know" },
   { t: 125, text: "You overdosed" },
   { t: 128, text: "On fructose" },
   { t: 131, text: "Chardonnay" },
@@ -48,13 +48,13 @@ export const sections = [
 // Timed story items that appear on the counter at specific song moments
 // These are big set-piece objects the player encounters as they run
 export const storyItems = [
-  { t: 12,  type: 'appleTart',        label: 'Apple Tart' },
+  { t: 12,  type: 'appleTart',         label: 'Apple Tart' },
   { t: 18,  type: 'raspberryCrumble',  label: 'Raspberry Crumble' },
   { t: 43,  type: 'coal',              label: 'Lump of Coal' },
   { t: 66,  type: 'fructose',          label: 'Fructose' },
   { t: 73,  type: 'chardonnay',        label: 'Chardonnay' },
   { t: 75,  type: 'tobacco',           label: 'Tobacco' },
-  { t: 100, type: 'knife',             label: 'The Knife' },
+  { t: 100, type: 'softGuy',           label: 'The Soft Guy' },
   { t: 136, type: 'lactose',           label: 'Lactose' },
   { t: 146, type: 'bed',               label: 'The Bed' },
   { t: 189, type: 'meat',              label: 'The Meat' },

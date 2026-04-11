@@ -213,13 +213,19 @@ class GameScene extends Phaser.Scene {
     g.fillStyle(0xe8d0a0); g.fillRect(8, 4, 5, 12); // cigarette poking out
     g.generateTexture('storyTobacco', 40, 50);
 
-    // Knife story item — big chef's knife
+    // Skinny nerd — the "softer weak guy" disposed of (man in a bin)
     g.clear();
-    g.fillStyle(0x6a4420); g.fillRect(0, 20, 16, 30); // handle
-    g.fillStyle(0xc0b090); g.fillCircle(8, 28, 3); g.fillCircle(8, 42, 3); // rivets
-    g.fillStyle(0xd0d8e0);
-    g.beginPath(); g.moveTo(4, 18); g.lineTo(60, 8); g.lineTo(65, 16); g.lineTo(8, 22); g.closePath(); g.fill();
-    g.generateTexture('storyKnife', 66, 52);
+    // Bin / wheelie bin
+    g.fillStyle(0x505050); g.fillRect(10, 20, 40, 40); // bin body
+    g.fillStyle(0x606060); g.fillRect(8, 18, 44, 6);   // bin lid, slightly open
+    g.fillStyle(0x404040); g.fillRect(14, 56, 8, 4); g.fillRect(38, 56, 8, 4); // wheels
+    // Skinny guy sticking out of the bin
+    g.fillStyle(0xf0c8a0); g.fillCircle(30, 10, 8);    // head
+    g.fillStyle(0x303030); g.fillCircle(27, 8, 2); g.fillCircle(33, 8, 2); // glasses
+    g.fillStyle(0x303030); g.fillRect(25, 8, 10, 1);   // glasses bridge
+    g.fillStyle(0x8b6040); g.fillRect(22, 2, 16, 4);   // messy hair
+    g.fillStyle(0x70a0d0); g.fillRect(24, 18, 12, 6);  // shirt collar poking out
+    g.generateTexture('storysoftGuy', 60, 60);
 
     // Lactose — milk carton
     g.clear();
@@ -1085,7 +1091,7 @@ class GameScene extends Phaser.Scene {
       fructose: 'storyFructose',
       chardonnay: 'storyChardonnay',
       tobacco: 'storyTobacco',
-      knife: 'storyKnife',
+      softGuy: 'storysoftGuy',
       lactose: 'storyLactose',
       bed: 'storyBed',
       meat: 'storyMeat',
