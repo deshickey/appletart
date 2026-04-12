@@ -1,6 +1,5 @@
 // ── Apple Tart — Phaser 3 ──
-import { SONG_DURATION_FALLBACK, lyrics, sections, storyItems, sectionPalettes }
-  from './songdata.js';
+import { songList } from './songs/index.js';
 
 const COUNTER_HEIGHT = 100;
 const WORLD_WIDTH = 50000;
@@ -40,7 +39,7 @@ class BootScene extends Phaser.Scene {
 
     btn.on('pointerover', () => btn.setColor('#fff'));
     btn.on('pointerout', () => btn.setColor('#e8c89a'));
-    btn.on('pointerdown', () => this.scene.start('Game'));
+    btn.on('pointerdown', () => this.scene.start('SongSelect'));
 
     const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     const controlsHint = isMobile
@@ -51,6 +50,53 @@ class BootScene extends Phaser.Scene {
       fontSize: '12px',
       color: '#4a3a2a',
     }).setOrigin(0.5);
+  }
+}
+
+// ─────────────────────────────────────────────
+//  SONG SELECT SCENE
+// ─────────────────────────────────────────────
+class SongSelectScene extends Phaser.Scene {
+  constructor() { super('SongSelect'); }
+
+  create() {
+    const cx = this.scale.width / 2;
+    const startY = 100;
+
+    this.cameras.main.setBackgroundColor('#0a0705');
+
+    this.add.text(cx, 40, 'Select a Track', {
+      fontFamily: 'Playfair Display, serif',
+      fontStyle: 'italic',
+      fontSize: '32px',
+      color: '#e8c89a',
+    }).setOrigin(0.5);
+
+    songList.forEach((song, i) => {
+      const y = startY + i * 70;
+      const hasFullData = song.lyrics.length > 0;
+
+      const title = this.add.text(cx, y, song.title, {
+        fontFamily: 'Playfair Display, serif',
+        fontStyle: 'italic',
+        fontSize: '24px',
+        color: '#e8c89a',
+      }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+      const sub = song.subtitle || (hasFullData ? '' : 'instrumental');
+      if (sub) {
+        this.add.text(cx, y + 24, sub, {
+          fontFamily: 'Courier Prime, monospace',
+          fontSize: '11px',
+          color: '#5a4a3a',
+          letterSpacing: 2,
+        }).setOrigin(0.5);
+      }
+
+      title.on('pointerover', () => title.setColor('#fff'));
+      title.on('pointerout', () => title.setColor('#e8c89a'));
+      title.on('pointerdown', () => this.scene.start('Game', { song }));
+    });
   }
 }
 
@@ -161,99 +207,6 @@ class GameScene extends Phaser.Scene {
     }
     g.generateTexture('raspberry', 28, 28);
 
-    // Giant apple tart story item
-    g.clear();
-    g.fillStyle(0xc8b898); g.fillEllipse(60, 55, 62, 18); // dish
-    g.fillStyle(0xdaa520); g.fillEllipse(60, 48, 55, 22); // crust
-    g.fillStyle(0x8b4513); g.fillEllipse(60, 44, 45, 18); // filling
-    for (let i = 0; i < 10; i++) {
-      const a = (i / 10) * Math.PI * 2;
-      g.fillStyle(i % 2 === 0 ? 0xa0c040 : 0x80a030);
-      g.fillEllipse(60 + Math.cos(a) * 30, 46 + Math.sin(a) * 10, 12, 7);
-    }
-    g.generateTexture('storyAppleTart', 120, 70);
-
-    // Raspberry crumble story item
-    g.clear();
-    g.fillStyle(0xd4a060); g.fillEllipse(50, 40, 52, 16); // dish
-    g.fillStyle(0xc89030); g.fillEllipse(50, 36, 45, 14); // crumble top
-    g.fillStyle(0xc03060);
-    for (let i = 0; i < 8; i++) {
-      g.fillCircle(20 + Math.random() * 60, 28 + Math.random() * 16, 4 + Math.random() * 3);
-    }
-    g.generateTexture('storyRaspberryCrumble', 100, 56);
-
-    // Coal
-    g.clear();
-    g.fillStyle(0x1a1a1a); g.fillCircle(16, 16, 16);
-    g.fillStyle(0xb43c0a); g.fillCircle(12, 12, 6);
-    g.fillStyle(0x2a2a2a);
-    g.fillCircle(20, 10, 5); g.fillCircle(10, 20, 4);
-    g.generateTexture('storyCoal', 32, 32);
-
-    // Chardonnay bottle
-    g.clear();
-    g.fillStyle(0x2a4a20);
-    g.fillRect(16, 60, 28, 50); // body
-    g.fillRect(22, 10, 16, 52); // neck
-    g.fillStyle(0xe8dcc8); g.fillRect(18, 72, 24, 20); // label
-    g.generateTexture('storyChardonnay', 60, 110);
-
-    // Fructose — sugar bag
-    g.clear();
-    g.fillStyle(0xf0e8d0); g.fillRect(0, 0, 50, 60);
-    g.fillStyle(0xe05020);
-    g.fillRect(5, 15, 40, 20); // label band
-    g.generateTexture('storyFructose', 50, 60);
-
-    // Tobacco — cigarette pack
-    g.clear();
-    g.fillStyle(0xc82020); g.fillRect(0, 0, 40, 50);
-    g.fillStyle(0xf0e0c0); g.fillRect(0, 0, 40, 15); // flip top
-    g.fillStyle(0xe8d0a0); g.fillRect(8, 4, 5, 12); // cigarette poking out
-    g.generateTexture('storyTobacco', 40, 50);
-
-    // Skinny nerd — the "softer weak guy" disposed of (man in a bin)
-    g.clear();
-    // Bin / wheelie bin
-    g.fillStyle(0x505050); g.fillRect(10, 20, 40, 40); // bin body
-    g.fillStyle(0x606060); g.fillRect(8, 18, 44, 6);   // bin lid, slightly open
-    g.fillStyle(0x404040); g.fillRect(14, 56, 8, 4); g.fillRect(38, 56, 8, 4); // wheels
-    // Skinny guy sticking out of the bin
-    g.fillStyle(0xf0c8a0); g.fillCircle(30, 10, 8);    // head
-    g.fillStyle(0x303030); g.fillCircle(27, 8, 2); g.fillCircle(33, 8, 2); // glasses
-    g.fillStyle(0x303030); g.fillRect(25, 8, 10, 1);   // glasses bridge
-    g.fillStyle(0x8b6040); g.fillRect(22, 2, 16, 4);   // messy hair
-    g.fillStyle(0x70a0d0); g.fillRect(24, 18, 12, 6);  // shirt collar poking out
-    g.generateTexture('storysoftGuy', 60, 60);
-
-    // Lactose — milk carton
-    g.clear();
-    g.fillStyle(0xf0f0f0); g.fillRect(0, 10, 40, 50);
-    g.fillStyle(0x4090e0); g.fillRect(0, 30, 40, 20); // blue band
-    g.fillStyle(0xf0f0f0);
-    g.beginPath(); g.moveTo(0, 10); g.lineTo(20, 0); g.lineTo(40, 10); g.closePath(); g.fill();
-    g.generateTexture('storyLactose', 40, 60);
-
-    // Bed — tiny bed
-    g.clear();
-    g.fillStyle(0x5a3a20); g.fillRect(0, 30, 80, 10); // frame
-    g.fillStyle(0xe8e0d0); g.fillRect(4, 14, 72, 18); // mattress
-    g.fillStyle(0x7090c0); g.fillRect(4, 10, 72, 8); // blanket
-    g.fillStyle(0xf0e8d8); g.fillRect(6, 8, 20, 10); // pillow
-    // Headboard
-    g.fillStyle(0x4a2a14); g.fillRect(0, 0, 6, 40);
-    g.generateTexture('storyBed', 80, 42);
-
-    // Meat — steak on plate
-    g.clear();
-    g.fillStyle(0xe8e0d8); g.fillEllipse(40, 36, 42, 14); // plate
-    g.fillStyle(0x5a1a08); g.fillEllipse(40, 30, 30, 12); // steak
-    g.fillStyle(0x8a2a10); g.fillEllipse(38, 28, 22, 9);
-    g.lineStyle(2, 0x2a0a04);
-    g.lineBetween(28, 22, 26, 34); g.lineBetween(38, 22, 36, 34); g.lineBetween(48, 22, 46, 34);
-    g.generateTexture('storyMeat', 80, 50);
-
     // Cleaver
     g.clear();
     // Blade
@@ -313,9 +266,17 @@ class GameScene extends Phaser.Scene {
     g.generateTexture('whisk', 28, 56);
 
     g.destroy();
+
+    // Song-specific story item textures
+    if (this.song.registerTextures) {
+      this.song.registerTextures(this);
+    }
   }
 
-  create() {
+  create(data) {
+    this.song = data.song;
+    const defaultPalette = this.song.sectionPalettes[this.song.sections[0].name];
+
     this.createTextures();
 
     const W = this.scale.width;
@@ -326,10 +287,10 @@ class GameScene extends Phaser.Scene {
     this.W = W;
     this.H = H;
     this.songTime = 0;
-    this.songDuration = SONG_DURATION_FALLBACK;
+    this.songDuration = this.song.durationFallback;
     this.lives = 5;
     this.score = 0;
-    this.currentSection = 'intro';
+    this.currentSection = this.song.sections[0].name;
     this.lastLyricIdx = -1;
     this.lastSectionIdx = -1;
     this.gameOver = false;
@@ -337,13 +298,13 @@ class GameScene extends Phaser.Scene {
     this.hazardTimer = 0;
 
     // ── Background layers (parallax) ──
-    this.cameras.main.setBackgroundColor(sectionPalettes.intro.bg);
+    this.cameras.main.setBackgroundColor(defaultPalette.bg);
 
     // Wall tile layer (slow parallax)
     this.wallTiles = this.add.tileSprite(0, 0, W, FLOOR_Y, '__DEFAULT')
       .setOrigin(0, 0).setScrollFactor(0).setAlpha(0);
     // We'll draw wall lines manually via a simple rectangle
-    this.wallBg = this.add.rectangle(W / 2, FLOOR_Y / 2, W, FLOOR_Y, sectionPalettes.intro.wall)
+    this.wallBg = this.add.rectangle(W / 2, FLOOR_Y / 2, W, FLOOR_Y, defaultPalette.wall)
       .setScrollFactor(0).setDepth(-10);
 
     // Background kitchen objects (parallax 0.2–0.4)
@@ -352,7 +313,7 @@ class GameScene extends Phaser.Scene {
 
     // ── Counter surface ──
     this.counterBg = this.add.rectangle(WORLD_WIDTH / 2, FLOOR_Y + COUNTER_HEIGHT / 2,
-      WORLD_WIDTH, COUNTER_HEIGHT, sectionPalettes.intro.counter).setDepth(0);
+      WORLD_WIDTH, COUNTER_HEIGHT, defaultPalette.counter).setDepth(0);
     // Counter edge highlight
     this.counterEdge = this.add.rectangle(WORLD_WIDTH / 2, FLOOR_Y + 3,
       WORLD_WIDTH, 6, 0xffffff).setAlpha(0.08).setDepth(0);
@@ -362,7 +323,7 @@ class GameScene extends Phaser.Scene {
 
     // Ground
     const ground = this.add.rectangle(WORLD_WIDTH / 2, FLOOR_Y + COUNTER_HEIGHT / 2,
-      WORLD_WIDTH, COUNTER_HEIGHT, sectionPalettes.intro.counter).setVisible(false);
+      WORLD_WIDTH, COUNTER_HEIGHT, defaultPalette.counter).setVisible(false);
     this.physics.add.existing(ground, true);
     this.groundBody = ground;
 
@@ -439,7 +400,7 @@ class GameScene extends Phaser.Scene {
       fontFamily: 'Courier Prime, monospace', fontSize: '14px', color: '#7a6a5a',
     }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(100);
 
-    this.titleText = this.add.text(24, 16, 'Apple Tart', {
+    this.titleText = this.add.text(24, 16, this.song.title, {
       fontFamily: 'Playfair Display, serif', fontStyle: 'italic',
       fontSize: '18px', color: '#e8c89a',
     }).setScrollFactor(0).setDepth(100);
@@ -477,7 +438,7 @@ class GameScene extends Phaser.Scene {
 
     // ── Audio ──
     this.audioEl = document.createElement('audio');
-    this.audioEl.src = 'Apple Tart PERC.mp3';
+    this.audioEl.src = this.song.audioSrc;
     this.audioEl.preload = 'auto';
     this.audioEl.addEventListener('loadedmetadata', () => {
       if (this.audioEl.duration && isFinite(this.audioEl.duration)) {
@@ -756,37 +717,41 @@ class GameScene extends Phaser.Scene {
     this.songTime = this.audioEl.currentTime || 0;
 
     // ── Section detection ──
-    for (let i = sections.length - 1; i >= 0; i--) {
-      if (this.songTime >= sections[i].t && this.lastSectionIdx !== i) {
+    const songSections = this.song.sections;
+    for (let i = songSections.length - 1; i >= 0; i--) {
+      if (this.songTime >= songSections[i].t && this.lastSectionIdx !== i) {
         this.lastSectionIdx = i;
-        this.currentSection = sections[i].name;
-        if (sections[i].label) {
-          this.sectionText.setText(sections[i].label);
+        this.currentSection = songSections[i].name;
+        if (songSections[i].label) {
+          this.sectionText.setText(songSections[i].label);
           this.tweens.add({
             targets: this.sectionText, alpha: 0.6, duration: 300, yoyo: true,
             hold: 1500, ease: 'Sine.easeIn',
           });
         }
         // Tint shift
-        const pal = sectionPalettes[this.currentSection];
-        this.cameras.main.setBackgroundColor(pal.bg);
-        this.wallBg.setFillStyle(pal.wall);
-        this.counterBg.setFillStyle(pal.counter);
+        const pal = this.song.sectionPalettes[this.currentSection];
+        if (pal) {
+          this.cameras.main.setBackgroundColor(pal.bg);
+          this.wallBg.setFillStyle(pal.wall);
+          this.counterBg.setFillStyle(pal.counter);
+        }
         break;
       }
     }
 
     // ── Lyrics ──
-    for (let i = lyrics.length - 1; i >= 0; i--) {
-      if (this.songTime >= lyrics[i].t && this.lastLyricIdx < i) {
+    const songLyrics = this.song.lyrics;
+    for (let i = songLyrics.length - 1; i >= 0; i--) {
+      if (this.songTime >= songLyrics[i].t && this.lastLyricIdx < i) {
         this.lastLyricIdx = i;
-        this.showLyric(lyrics[i].text);
+        this.showLyric(songLyrics[i].text);
         break;
       }
     }
 
     // ── Story items ──
-    for (const item of storyItems) {
+    for (const item of this.song.storyItems) {
       if (this.songTime >= item.t && !this.storyItemsSpawned.has(item.t)) {
         this.storyItemsSpawned.add(item.t);
         this.spawnStoryItem(item);
@@ -911,38 +876,46 @@ class GameScene extends Phaser.Scene {
 
   // ── Hazard intensity per section ──
   getIntensity() {
-    const s = this.currentSection;
-    if (s === 'chorus1')  return 1.0;
-    if (s === 'chorus2')  return 1.3;
-    if (s === 'verse2')   return 0.7;
-    if (s === 'comatose') return 0.5;
-    if (s === 'outro')    return 0;
-    return 0.4;
+    const val = this.song.intensityMap[this.currentSection];
+    return val !== undefined ? val : this.song.defaultIntensity;
   }
 
   // ── Spawn hazard ──
   spawnHazard() {
-    const roll = Math.random();
-    const s = this.currentSection;
-    if (s === 'chorus1' || s === 'chorus2') {
-      // Choruses: more dangerous mix
-      if (roll < 0.30) this.spawnRollingFruit();
-      else if (roll < 0.50) this.spawnCleaver();
-      else if (roll < 0.65) this.spawnSteamJet();
-      else if (roll < 0.80) this.spawnFlourBomb();
-      else if (roll < 0.90) this.spawnHotSaucePuddle();
-      else this.spawnSwingingWhisk();
-    } else if (s === 'comatose') {
-      // Comatose: eerie, mostly steam and puddles
-      if (roll < 0.50) this.spawnSteamJet();
-      else this.spawnHotSaucePuddle();
+    const mix = this.song.hazardMixes[this.currentSection];
+    if (mix) {
+      // Weighted random from song config
+      const roll = Math.random();
+      let cumulative = 0;
+      for (const entry of mix) {
+        cumulative += entry.weight;
+        if (roll < cumulative) {
+          this.spawnHazardByType(entry.type);
+          return;
+        }
+      }
+      // Fallback to last entry
+      this.spawnHazardByType(mix[mix.length - 1].type);
     } else {
-      // Verses/intro: standard mix
+      // Default mix: standard verse/intro hazards
+      const roll = Math.random();
       if (roll < 0.40) this.spawnRollingFruit();
       else if (roll < 0.60) this.spawnCleaver();
       else if (roll < 0.75) this.spawnSteamJet();
       else if (roll < 0.90) this.spawnFlourBomb();
       else this.spawnHotSaucePuddle();
+    }
+  }
+
+  spawnHazardByType(type) {
+    switch (type) {
+      case 'rollingFruit': this.spawnRollingFruit(); break;
+      case 'cleaver': this.spawnCleaver(); break;
+      case 'steamJet': this.spawnSteamJet(); break;
+      case 'flourBomb': this.spawnFlourBomb(); break;
+      case 'hotSauce': this.spawnHotSaucePuddle(); break;
+      case 'whisk': this.spawnSwingingWhisk(); break;
+      default: this.spawnRollingFruit(); break;
     }
   }
 
@@ -1084,19 +1057,7 @@ class GameScene extends Phaser.Scene {
   // ── Story item spawning ──
   spawnStoryItem(item) {
     const spawnX = this.player.x + this.W * 0.6 + Math.random() * 200;
-    const textureMap = {
-      appleTart: 'storyAppleTart',
-      raspberryCrumble: 'storyRaspberryCrumble',
-      coal: 'storyCoal',
-      fructose: 'storyFructose',
-      chardonnay: 'storyChardonnay',
-      tobacco: 'storyTobacco',
-      softGuy: 'storysoftGuy',
-      lactose: 'storyLactose',
-      bed: 'storyBed',
-      meat: 'storyMeat',
-    };
-    const key = textureMap[item.type];
+    const key = this.song.storyTextureMap[item.type];
     if (!key) return;
 
     const obj = this.add.image(spawnX, this.FLOOR_Y - 10, key).setOrigin(0.5, 1).setDepth(2);
@@ -1173,6 +1134,7 @@ class GameScene extends Phaser.Scene {
       score: this.score,
       time: this.songTime,
       songDuration: this.songDuration,
+      song: this.song,
     });
   }
 
@@ -1200,6 +1162,12 @@ class EndScene extends Phaser.Scene {
       ? `Score: ${data.score}`
       : `Survived ${m}:${s}`;
 
+    // Song title
+    this.add.text(cx, cy - 80, data.song.title, {
+      fontFamily: 'Playfair Display, serif', fontStyle: 'italic',
+      fontSize: '20px', color: '#5a4a3a',
+    }).setOrigin(0.5);
+
     this.add.text(cx, cy - 40, title, {
       fontFamily: 'Playfair Display, serif', fontStyle: 'italic',
       fontSize: '40px', color: '#e8c89a',
@@ -1209,14 +1177,25 @@ class EndScene extends Phaser.Scene {
       fontFamily: 'Courier Prime, monospace', fontSize: '14px', color: '#7a6a5a',
     }).setOrigin(0.5);
 
-    const btn = this.add.text(cx, cy + 60, '[ PLAY AGAIN ]', {
+    // Play Again button
+    const replayBtn = this.add.text(cx, cy + 60, '[ PLAY AGAIN ]', {
       fontFamily: 'Courier Prime, monospace', fontSize: '18px',
       color: '#7a6a5a', letterSpacing: 3,
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
-    btn.on('pointerover', () => btn.setColor('#e8c89a'));
-    btn.on('pointerout', () => btn.setColor('#7a6a5a'));
-    btn.on('pointerdown', () => this.scene.start('Game'));
+    replayBtn.on('pointerover', () => replayBtn.setColor('#e8c89a'));
+    replayBtn.on('pointerout', () => replayBtn.setColor('#7a6a5a'));
+    replayBtn.on('pointerdown', () => this.scene.start('Game', { song: data.song }));
+
+    // Song Select button
+    const selectBtn = this.add.text(cx, cy + 100, '[ SONG SELECT ]', {
+      fontFamily: 'Courier Prime, monospace', fontSize: '14px',
+      color: '#4a3a2a', letterSpacing: 3,
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+    selectBtn.on('pointerover', () => selectBtn.setColor('#e8c89a'));
+    selectBtn.on('pointerout', () => selectBtn.setColor('#4a3a2a'));
+    selectBtn.on('pointerdown', () => this.scene.start('SongSelect'));
   }
 }
 
@@ -1240,7 +1219,7 @@ const config = {
       debug: false,
     },
   },
-  scene: [BootScene, GameScene, EndScene],
+  scene: [BootScene, SongSelectScene, GameScene, EndScene],
   scale: {
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
